@@ -1,0 +1,8 @@
+CHIP DMux16Way {
+  IN in, sel[6];
+  OUT a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p;
+
+  PARTS:
+  DMux(in=in, sel=sel[2], a=abcd, b=efgh);
+}
+
