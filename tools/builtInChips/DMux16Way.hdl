@@ -4,7 +4,7 @@ CHIP DMux16Way {
 
   PARTS:
   DMux(in=in, sel=sel[3], a=abcdefgh, b=ijklmnop);
-  DMux8Way(in=abcdefgh, sel=sel[1..2], a=a, b=b, c=c, d=d, e=e, f=f, g=g, h=h);
-  DMux8Way(in=ijklmnop, sel=sel[1..2], a=i, b=j, c=k, d=l, e=m, f=n, g=o, h=p);
+  DMux8Way(in=abcdefgh, sel=sel[0..2], a=a, b=b, c=c, d=d, e=e, f=f, g=g, h=h);
+  DMux8Way(in=ijklmnop, sel=sel[0..2], a=i, b=j, c=k, d=l, e=m, f=n, g=o, h=p);
 }
 
