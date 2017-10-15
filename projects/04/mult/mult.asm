@@ -6,4 +6,48 @@
 // Multiplies R0 and R1 and stores the result in R2.
 // (R0, R1, R2 refer to RAM[0], RAM[1], and RAM[2], respectively.)
 
-// Put your code here.
+
+		@R0
+		D=M
+
+		@ZERO_R2
+		D;JEQ
+
+		@R1
+		D=M
+	
+		@ZERO_R2
+		D;JEQ
+
+		@R1
+		D=M
+		@counter
+		M=D
+		
+		@R2
+		M=0
+
+	(LOOPER)
+		@R0
+		D=M
+		@R2
+		M=M+D
+
+		@counter
+		M=M-1
+		D=M
+		@END
+		D;JLE
+
+		@LOOPER
+		0;JMP
+
+	(ZERO_R2)
+		@R2
+		M=0
+		@END
+		0;JMP
+
+	(END)
+		@END
+		0;JMP
