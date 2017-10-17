@@ -39,5 +39,11 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+    
+    // psudo code
+    // if instruction[0] == 0 it is A instruction
+    //      A register = instruction
+    //      addressM = instruction
+    // if instruction[0] == 1 it is C instruction
+
 }
