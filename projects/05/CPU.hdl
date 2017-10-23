@@ -39,11 +39,40 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    
-    // psudo code
-    // if instruction[0] == 0 it is A instruction
-    //      A register = instruction
-    //      addressM = instruction
-    // if instruction[0] == 1 it is C instruction
 
+        aOrC = instruction[0]
+        saveA = instruction[10]
+        saveM = instruction[11]
+        saveD = instruction[12]
+        aBit = instruction[3]
+    
+        Mux16(a=instruction, b=preOutput, load=aOrC, out=selectedInstruction);
+        
+        Register(in=selectedInstruction, load=saveA, out=afterARegister);
+        
+        Mux16(a=afterARegister, b=inM, load=aBit, out=aluYBit);
+    
+        ALU(
+            x=preDRegister, 
+            y=aluYBit, 
+            zx=instruction[4], 
+            nx=instruction[5], 
+            zy=instruction[6], 
+            ny=instruction[7], 
+            f=instruction[8], 
+            no=instruction[9],
+            out=aluOutput,
+            zr=isAluOutputZero,
+            ng=isAluOutputNagtive
+        );
+
+        Register(in=aluOutput, load=saveD, out=preDRegister); // determines D register and reset preDregister
+        And16(a=preOutput, b=aluOutput, out=preOutput); // reset preOutput
+
+        Mux16(a=false, b=aluOutput, load=saveM, out=outM); // set outM
+
+        // TODO
+        // determine jump bits and write PC
+        // set PC = 0 if reset is 1
+        // determine writeM value (idea: maybe when all jump bits are 0?)
 }
