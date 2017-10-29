@@ -78,23 +78,17 @@ CHIP CPU {
 
 
     // TODO: FIX PC (maybe use an external counter?)
+    
+    And(a=isAluOutputNagtive, b=instruction[2], out=shouldJumpWhenNagtive);
+    And(a=isAluOutputZero, b=instruction[1], out=shouldJumpWhenZero);
+    And(a=isAluOutputNagtive, b=instruction[0], out=shouldJumpWhenPositive);
 
-    Inc16(in=pc, out[0..14]=incrementedPc);
+    Or(a=shouldJumpWhenZero, b=shouldJumpWhenNagtive, out=shouldJumpWhenLessOrEqual);
+    Or(a=shouldJumpWhenPositive, b=shouldJumpWhenLessOrEqual, out=shouldJump);
 
-    Mux8Way16(a=incrementedPc, 
-        b=aRegisterOutput,
-        c=aRegisterOutput,
-        d=aRegisterOutput,
-        e=aRegisterOutput,
-        f=aRegisterOutput,
-        g=aRegisterOutput,
-        h=aRegisterOutput,
-        sel=instruction[0..2],
-        out=jumpBitResult);
+    Not(in=shouldJump, out=shouldIncrement);
 
-    Mux16(a=incrementedPc, b=jumpBitResult, sel=instruction[15], out[0..14]=nextPc);
+    PC(in=innerPc, load=shouldJump, inc=shouldIncrement, reset=reset, out=innerPc);
 
-    Mux16(a=nextPc, b=false, sel=reset, out[0..14]=pc);
-
-    PC(in=, load=false, inc=true, reset=reset, out[0..14]=pc);
+    And16(a=innerPc, b=innerPc, out[0..14]=pc);
 }
