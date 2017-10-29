@@ -40,53 +40,61 @@ CHIP CPU {
 
     PARTS:
 
-        aOrC = instruction[0]
-        saveA = instruction[10]
-        saveM = instruction[11]
-        saveD = instruction[12]
-        aBit = instruction[3]
-    
-        Mux16(a=instruction, b=preOutput, load=aOrC, out=selectedInstruction);
+    // i  _  _  a  c1 c2 c3 c4 c5 c6 d1 d2 d3 j1 j2 j3
+    // 15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
+
+    Not(in=instruction[15], out=cInstruction);
+
+    Mux16(a=instruction, b=preAluOutput, sel=instruction[15], out=aRegisterInput);
+
+    Or(a=cInstruction, b=instruction[12], out=shouldSaveToARigster);
+
+    ARegister(in=aRegisterInput, load=shouldSaveToARigster, out=aRegisterOutput);
+
+    And16(a=aRegisterOutput, b=aRegisterOutput, out[0..14]=addressM);
         
-        Register(in=selectedInstruction, load=saveA, out=afterARegister);
-
-        Or16(a=false, b=afterARegister, out=addressM);
-        
-        Mux16(a=afterARegister, b=inM, load=aBit, out=aluYBit);
+    Mux16(a=aRegisterOutput, b=inM, sel=instruction[12], out=aluYBit);
     
-        ALU(
-            x=preDRegister, 
-            y=aluYBit, 
-            zx=instruction[4], 
-            nx=instruction[5], 
-            zy=instruction[6], 
-            ny=instruction[7], 
-            f=instruction[8], 
-            no=instruction[9],
-            out=aluOutput,
-            zr=isAluOutputZero,
-            ng=isAluOutputNagtive
-        );
+    ALU(
+        x=preDRegister, 
+        y=aluYBit, 
+        zx=instruction[11],
+        nx=instruction[10],
+        zy=instruction[9],
+        ny=instruction[8],
+        f=instruction[7],
+        no=instruction[6],
+        out=aluOutput,
+        zr=isAluOutputZero,
+        ng=isAluOutputNagtive
+    );
 
-        Register(in=aluOutput, load=saveD, out=preDRegister); // determines D register and reset preDregister
-        And16(a=preOutput, b=aluOutput, out=preOutput); // reset preOutput
+    DRegister(in=aluOutput, load=instruction[3], out=preDRegister);
+    And16(a=aluOutput, b=aluOutput, out=preAluOutput);
 
-        Mux16(a=false, b=aluOutput, load=saveM, out=outM); // set outM
+    And16(a=aluOutput, b=aluOutput, out=outM);
 
-        Mux16(a=false, b=true, load=saveM, out=writeM)
+    And(a=instruction[4], b=instruction[4], out=writeM);
 
-        // PC possiblilites
-        noJump = pc + 1
-        Mux8Way16(a=noJump, 
-            b=afterARegister,
-            c=afterARegister,
-            d=afterARegister,
-            e=afterARegister,
-            f=afterARegister,
-            g=afterARegister,
-            h=afterARegister,
-            sel=instruction[13-15],
-            out=jumpBitResult);
 
-        Mux16(a=jumpBitResult, b=false, sel=reset, out=pc);
+    // TODO: FIX PC (maybe use an external counter?)
+
+    Inc16(in=pc, out[0..14]=incrementedPc);
+
+    Mux8Way16(a=incrementedPc, 
+        b=aRegisterOutput,
+        c=aRegisterOutput,
+        d=aRegisterOutput,
+        e=aRegisterOutput,
+        f=aRegisterOutput,
+        g=aRegisterOutput,
+        h=aRegisterOutput,
+        sel=instruction[0..2],
+        out=jumpBitResult);
+
+    Mux16(a=incrementedPc, b=jumpBitResult, sel=instruction[15], out[0..14]=nextPc);
+
+    Mux16(a=nextPc, b=false, sel=reset, out[0..14]=pc);
+
+    PC(in=, load=false, inc=true, reset=reset, out[0..14]=pc);
 }
