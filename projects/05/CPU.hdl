@@ -49,6 +49,8 @@ CHIP CPU {
         Mux16(a=instruction, b=preOutput, load=aOrC, out=selectedInstruction);
         
         Register(in=selectedInstruction, load=saveA, out=afterARegister);
+
+        Or16(a=false, b=afterARegister, out=addressM);
         
         Mux16(a=afterARegister, b=inM, load=aBit, out=aluYBit);
     
@@ -71,8 +73,20 @@ CHIP CPU {
 
         Mux16(a=false, b=aluOutput, load=saveM, out=outM); // set outM
 
-        // TODO
-        // determine jump bits and write PC
-        // set PC = 0 if reset is 1
-        // determine writeM value (idea: maybe when all jump bits are 0?)
+        Mux16(a=false, b=true, load=saveM, out=writeM)
+
+        // PC possiblilites
+        noJump = pc + 1
+        Mux8Way16(a=noJump, 
+            b=afterARegister,
+            c=afterARegister,
+            d=afterARegister,
+            e=afterARegister,
+            f=afterARegister,
+            g=afterARegister,
+            h=afterARegister,
+            sel=instruction[13-15],
+            out=jumpBitResult);
+
+        Mux16(a=jumpBitResult, b=false, sel=reset, out=pc);
 }
