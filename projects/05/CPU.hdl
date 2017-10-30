@@ -82,7 +82,10 @@ CHIP CPU {
     
     And(a=isAluOutputNagtive, b=instruction[2], out=shouldJumpWhenNagtive);
     And(a=isAluOutputZero, b=instruction[1], out=shouldJumpWhenZero);
-    Not(in=isAluOutputNagtive, out=isAluOutputPositive);
+
+    Not(in=isAluOutputZero, out=aluOutputNotZero);
+    Not(in=isAluOutputNagtive, out=aluOutputNotNagtive);
+    And(a=aluOutputNotZero, b=aluOutputNotNagtive, out=isAluOutputPositive);
     And(a=isAluOutputPositive, b=instruction[0], out=shouldJumpWhenPositive);
 
     Or(a=shouldJumpWhenZero, b=shouldJumpWhenNagtive, out=shouldJumpWhenLessOrEqual);
