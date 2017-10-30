@@ -43,17 +43,20 @@ CHIP CPU {
     // i  _  _  a  c1 c2 c3 c4 c5 c6 d1 d2 d3 j1 j2 j3
     // 15 14 13 12 11 10 09 08 07 06 05 04 03 02 01 00
 
-    Not(in=instruction[15], out=cInstruction);
+    Not(in=instruction[15], out=notA);
 
     Mux16(a=instruction, b=preAluOutput, sel=instruction[15], out=aRegisterInput);
 
-    Or(a=cInstruction, b=instruction[12], out=shouldSaveToARigster);
+    And(a=instruction[15], b=instruction[5], out=cInstructionSaveA);
+
+    Or(a=notA, b=cInstructionSaveA, out=shouldSaveToARigster);
 
     ARegister(in=aRegisterInput, load=shouldSaveToARigster, out=aRegisterOutput);
 
     And16(a=aRegisterOutput, b=aRegisterOutput, out[0..14]=addressM);
-        
-    Mux16(a=aRegisterOutput, b=inM, sel=instruction[12], out=aluYBit);
+    
+    And(a=instruction[15], b=instruction[12], out=AMSwitch);
+    Mux16(a=aRegisterOutput, b=inM, sel=AMSwitch, out=aluYBit);
     
     ALU(
         x=preDRegister, 
@@ -69,26 +72,33 @@ CHIP CPU {
         ng=isAluOutputNagtive
     );
 
-    DRegister(in=aluOutput, load=instruction[3], out=preDRegister);
+    And(a=instruction[15], b=instruction[4], out=shouldSaveDRegister);
+    DRegister(in=aluOutput, load=shouldSaveDRegister, out=preDRegister);
     And16(a=aluOutput, b=aluOutput, out=preAluOutput);
 
     And16(a=aluOutput, b=aluOutput, out=outM);
 
-    And(a=instruction[4], b=instruction[4], out=writeM);
+    And(a=instruction[15], b=instruction[3], out=writeM);
 
 
-    // TODO: FIX PC (maybe use an external counter?)
+    // TODO: FIX PC
     
     And(a=isAluOutputNagtive, b=instruction[2], out=shouldJumpWhenNagtive);
     And(a=isAluOutputZero, b=instruction[1], out=shouldJumpWhenZero);
-    And(a=isAluOutputNagtive, b=instruction[0], out=shouldJumpWhenPositive);
+    Not(in=isAluOutputNagtive, out=isAluOutputPositive);
+    And(a=isAluOutputPositive, b=instruction[0], out=shouldJumpWhenPositive);
 
     Or(a=shouldJumpWhenZero, b=shouldJumpWhenNagtive, out=shouldJumpWhenLessOrEqual);
-    Or(a=shouldJumpWhenPositive, b=shouldJumpWhenLessOrEqual, out=shouldJump);
+    Or(a=shouldJumpWhenLessOrEqual, b=shouldJumpWhenPositive, out=metAtLeastOneJumpBit);
 
-    Not(in=shouldJump, out=shouldIncrement);
+    // special case when jump bits are 111
+    And(a=instruction[2], b=instruction[1], out=compareD2AndD1);
+    And(a=compareD2AndD1, b=instruction[0], out=areTheyAllOnes);
 
-    PC(in=innerPc, load=shouldJump, inc=shouldIncrement, reset=reset, out=innerPc);
+    Or(a=areTheyAllOnes, b=metAtLeastOneJumpBit, out=jumpBitResult);
 
-    And16(a=innerPc, b=innerPc, out[0..14]=pc);
+    // If A instruction don't jump
+    And(a=jumpBitResult, b=instruction[15], out=shouldJump);
+
+    PC(in=aRegisterOutput, load=shouldJump, inc=true, reset=reset, out[0..14]=pc);
 }
