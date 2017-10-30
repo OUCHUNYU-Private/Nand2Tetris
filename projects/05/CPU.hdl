@@ -79,9 +79,6 @@ CHIP CPU {
     And16(a=aluOutput, b=aluOutput, out=outM);
 
     And(a=instruction[15], b=instruction[3], out=writeM);
-
-
-    // TODO: FIX PC
     
     And(a=isAluOutputNagtive, b=instruction[2], out=shouldJumpWhenNagtive);
     And(a=isAluOutputZero, b=instruction[1], out=shouldJumpWhenZero);
